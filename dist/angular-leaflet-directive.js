@@ -1086,6 +1086,19 @@ angular.module('leaflet-directive').service('leafletHelpers', ["$q", "$log", fun
         }
       },
     },
+    TooltipPlugin: {
+      isLoaded: function() {
+        return angular.isDefined(L.Tooltip);
+      },
+
+      is: function(layer) {
+        if (this.isLoaded()) {
+          return layer instanceof L.MarkerClusterGroup;
+        } else {
+          return false;
+        }
+      },
+    },
     MarkerClusterPlugin: {
       isLoaded: function() {
         return angular.isDefined(L.MarkerClusterGroup);
@@ -2592,6 +2605,21 @@ angular.module('leaflet-directive').service('leafletMarkersHelpers', ["$rootScop
       }
     }
   };
+  var _manageOpenTooltip = function(marker, markerData) {
+    var markerScope = angular.isFunction(markerData.getMessageScope) ? markerData.getMessageScope() : $rootScope;
+    var labelScope = angular.isFunction(markerData.getTooltipScope) ? markerData.getTooltipScope() : markerScope;
+    var compileMessage = isDefined(markerData.compileMessage) ? markerData.compileMessage : true;
+
+    if (Helpers.TooltipPlugin.isLoaded() && isDefined(markerData.tooltip)) {
+      if (isDefined(markerData.tooltip.options) && markerData.tooltip.options.noHide === true) {
+        marker.showTooltip();
+      }
+
+      if (compileMessage && isDefined(marker.tooltip)) {
+        $compile(marker.tooltip._container)(labelScope);
+      }
+    }
+  };
 
   var _updateMarker = function(markerData, oldMarkerData, marker, name, leafletScope, layers, map) {
     if (!isDefined(oldMarkerData)) {
@@ -2747,6 +2775,22 @@ angular.module('leaflet-directive').service('leafletMarkersHelpers', ["$rootScop
       } else if (!('label' in markerData && !('message' in markerData.label))) {
         if (angular.isFunction(marker.unbindLabel)) {
           marker.unbindLabel();
+        }
+      }
+    }
+    if (Helpers.TooltipPlugin.isLoaded()) {
+      if (isDefined(markerData.tooltip) && isDefined(markerData.tooltip.message)) {
+        if ('tooltip' in oldMarkerData && 'message' in oldMarkerData.tooltip && !angular.equals(markerData.tooltip.message, oldMarkerData.tooltip.message)) {
+          marker.updateTooltipContent(markerData.tooltip.message);
+        } else if (!angular.isFunction(marker.getTooltip) || angular.isFunction(marker.getTooltip) && !isDefined(marker.getTooltip())) {
+          marker.bindTooltip(markerData.tooltip.message, markerData.tooltip.options);
+          _manageOpenTooltip(marker, markerData);
+        } else {
+          _manageOpenTooltip(marker, markerData);
+        }
+      } else if (!('tooltip' in markerData && !('message' in markerData.tooltip))) {
+        if (angular.isFunction(marker.unbindTooltip)) {
+          marker.unbindTooltip();
         }
       }
     }
@@ -4675,6 +4719,10 @@ angular.module('leaflet-directive').directive('markers',
             // Show label if defined
             if (Helpers.LabelPlugin.isLoaded() && isDefined(model.label) && isDefined(model.label.message)) {
               marker.bindLabel(model.label.message, model.label.options);
+            }
+            // Show tooltip if defined
+            if (isDefined(model.tooltip) && isDefined(model.tooltip.message)) {
+              marker.bindTooltip(model.tooltip.message, model.tooltip.options);
             }
 
             // Check if the marker should be added to a layer
