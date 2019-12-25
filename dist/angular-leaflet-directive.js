@@ -2607,7 +2607,7 @@ angular.module('leaflet-directive').service('leafletMarkersHelpers', ["$rootScop
   };
   var _manageOpenTooltip = function(marker, markerData) {
     var markerScope = angular.isFunction(markerData.getMessageScope) ? markerData.getMessageScope() : $rootScope;
-    var labelScope = angular.isFunction(markerData.getTooltipScope) ? markerData.getTooltipScope() : markerScope;
+    var tooltipScope = angular.isFunction(markerData.getTooltipScope) ? markerData.getTooltipScope() : markerScope;
     var compileMessage = isDefined(markerData.compileMessage) ? markerData.compileMessage : true;
 
     if (Helpers.TooltipPlugin.isLoaded() && isDefined(markerData.tooltip)) {
@@ -2615,7 +2615,7 @@ angular.module('leaflet-directive').service('leafletMarkersHelpers', ["$rootScop
         marker.showTooltip();
       }
       if (compileMessage && isDefined(marker.getTooltip)) {
-        $compile(marker.getTooltip()._container)(labelScope);
+        $compile(marker.getTooltip()._container)(tooltipScope);
       }
     }
   };
