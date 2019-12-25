@@ -2614,9 +2614,8 @@ angular.module('leaflet-directive').service('leafletMarkersHelpers', ["$rootScop
       if (isDefined(markerData.tooltip.options) && markerData.tooltip.options.noHide === true) {
         marker.showTooltip();
       }
-
-      if (compileMessage && isDefined(marker.tooltip)) {
-        $compile(marker.tooltip._container)(labelScope);
+      if (compileMessage && isDefined(marker.getTooltip)) {
+        $compile(marker.getTooltip()._container)(labelScope);
       }
     }
   };
@@ -2781,7 +2780,7 @@ angular.module('leaflet-directive').service('leafletMarkersHelpers', ["$rootScop
     if (Helpers.TooltipPlugin.isLoaded()) {
       if (isDefined(markerData.tooltip) && isDefined(markerData.tooltip.message)) {
         if ('tooltip' in oldMarkerData && 'message' in oldMarkerData.tooltip && !angular.equals(markerData.tooltip.message, oldMarkerData.tooltip.message)) {
-          marker.updateTooltipContent(markerData.tooltip.message);
+          marker.getTooltip()._updateContent(markerData.tooltip.message);
         } else if (!angular.isFunction(marker.getTooltip) || angular.isFunction(marker.getTooltip) && !isDefined(marker.getTooltip())) {
           marker.bindTooltip(markerData.tooltip.message, markerData.tooltip.options);
           _manageOpenTooltip(marker, markerData);
@@ -2874,6 +2873,8 @@ angular.module('leaflet-directive').service('leafletMarkersHelpers', ["$rootScop
     manageOpenPopup: _manageOpenPopup,
 
     manageOpenLabel: _manageOpenLabel,
+
+    manageOpenTooltip: _manageOpenTooltip,
 
     createMarker: function(markerData) {
       if (!isDefined(markerData) || !geoHlp.validateCoords(markerData)) {
@@ -4723,6 +4724,7 @@ angular.module('leaflet-directive').directive('markers',
             // Show tooltip if defined
             if (isDefined(model.tooltip) && isDefined(model.tooltip.message)) {
               marker.bindTooltip(model.tooltip.message, model.tooltip.options);
+              leafletMarkersHelpers.manageOpenTooltip(marker, model)
             }
 
             // Check if the marker should be added to a layer
